@@ -2,24 +2,25 @@ package com.example.uploadingfiles.service;
 
 import com.example.uploadingfiles.config.FileStorageProperties;
 import com.example.uploadingfiles.entity.FileInfo;
-import com.example.uploadingfiles.exception.FileInfoNotFoundWithNameException;
-import com.example.uploadingfiles.exception.FileStorageException;
-import com.example.uploadingfiles.exception.InvalidFilePathException;
-import com.example.uploadingfiles.exception.UnableToCreateDirectoryException;
+import com.example.uploadingfiles.exception.*;
 import com.example.uploadingfiles.repository.FileInfoRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import javax.annotation.Resource;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.sql.Timestamp;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -43,40 +44,38 @@ public class FileStorageService {
     @Autowired
     private FileInfoRepository fileInfoRepository;
 
-    public String storeFile(MultipartFile file) {
+    public FileInfo storeFile(MultipartFile file) {
 
-        String originalName = StringUtils.cleanPath(file.getOriginalFilename());
-        log.info("originalName은 이거다"+originalName);
+        FileInfo fileInfo = createSavedName(file);
 
         try {
-            if (originalName.contains("..")) {
-                throw new InvalidFilePathException("Sorry! Filename contains invalid path sequence" + originalName);
-            }
 
-//            while (fileInfoRepository.existsByName(fileName)) {
-//                int number = 1;
-//                fileName = fileName + "(" + Integer.toString(number) + ")";
-//                number +=1;
-//            }   fileName이 겹칠 때 (1), (2) 이렇게 주는 부분. hashMap으로 구현 가능할 듯.
-
-            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-            String savedName = originalName + timestamp.toString();
-            Path targetLocation = this.fileStorageLocation.resolve(savedName);
+            Path targetLocation = this.fileStorageLocation.resolve(fileInfo.getSavedName());
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
-
-            String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
-                    .path("/api/file/downloadFile")
-                    .path(savedName)
-                    .toUriString();
-
-            saveFileInfo(originalName, savedName, fileDownloadUri, file.getContentType(), file.getSize());
-
-            return savedName;
+            return fileInfo;
 
         } catch (IOException ex) {
-            throw new FileStorageException("Could not store file" + originalName + "Please try again!", ex);
+            throw new FileStorageException("Could not store file" + fileInfo.getOriginalName() + "Please try again!", ex);
         }
 
+    }
+
+    private FileInfo createSavedName(MultipartFile file) {
+
+        FileInfo fileInfo = new FileInfo();
+        String originalName = StringUtils.cleanPath(file.getOriginalFilename());
+
+        if (originalName.contains("..")) {
+            throw new InvalidFilePathException("Sorry! Filename contains invalid path sequence" + originalName);
+        }
+
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        String savedName = originalName + timestamp.toString();
+
+        fileInfo.setOriginalName(originalName);
+        fileInfo.setSavedName(savedName);
+
+        return fileInfo;
     }
 
     public void saveFileInfo(String originalName, String savedName, String downloadUri, String contentType, long size) {
@@ -97,5 +96,29 @@ public class FileStorageService {
 
         fileInfoRepository.save(fileInfo);
 
+    }
+
+    public Resource loadFileAsResource(String uuid) {
+
+        //uuid로 fileInfo에서 savedName 찾는다.
+        FileInfo fileInfo = fileInfoRepository.findByUuid(uuid)
+                .orElseThrow(() -> new FileInfoNotFoundWithUuidException("File info not found with uuid"));
+        String savedName = fileInfo.getSavedName();
+
+        //서버에서 savedName으로 파일 찾는다.
+        Resource resource;
+
+        try {
+            Path filePath = this.fileStorageLocation.resolve(savedName).normalize();
+            resource = (Resource) new UrlResource(filePath.toUri());
+            if (resource.exists()) {
+
+            }
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+        //파일을 resource로 돌려준다: contetnType 알아오자.
+
+        return resource;
     }
 }

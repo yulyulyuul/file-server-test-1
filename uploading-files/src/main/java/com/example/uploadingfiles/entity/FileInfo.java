@@ -21,6 +21,7 @@ public class FileInfo {
     @Id
     @GeneratedValue(generator="UUID")
     @GenericGenerator(name="UUID", strategy="org.hibernate.id.UUIDGenerator")
+    @Column
     private UUID uuid;
 
     @Column

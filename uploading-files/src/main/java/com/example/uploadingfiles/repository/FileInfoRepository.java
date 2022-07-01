@@ -10,4 +10,6 @@ import java.util.Optional;
 public interface FileInfoRepository extends JpaRepository<FileInfo, Long> {
     Optional<FileInfo> findBySavedName(String savedName);
     Boolean existsBySavedName (String savedName);
+
+    Optional<FileInfo> findByUuid(String uuid);
 }
