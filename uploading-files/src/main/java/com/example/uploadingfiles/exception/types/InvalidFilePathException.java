@@ -1,4 +1,4 @@
-package com.example.uploadingfiles.exception;
+package com.example.uploadingfiles.exception.types;
 
 public class InvalidFilePathException extends RuntimeException {
 

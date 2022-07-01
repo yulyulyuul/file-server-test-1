@@ -1,4 +1,4 @@
-package com.example.uploadingfiles.exception;
+package com.example.uploadingfiles.exception.types;
 
 import java.io.IOException;
 
