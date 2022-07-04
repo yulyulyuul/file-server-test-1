@@ -27,6 +27,7 @@ public class FileStorageService {
     private final Path fileStorageLocation;
 
     @Autowired
+
     public FileStorageService(FileStorageProperties fileStorageProperties) {
         this.fileStorageLocation = Paths.get(fileStorageProperties.getUploadDir())
                 .toAbsolutePath().normalize();
@@ -53,7 +54,7 @@ public class FileStorageService {
             return fileInfo;
 
         } catch (IOException ex) {
-            throw new FileStorageException("Could not store file" + fileInfo.getOriginalName() + "Please try again!", ex);
+            throw new CannotStoreFileException();
         }
 
     }
@@ -82,7 +83,7 @@ public class FileStorageService {
 
         if (fileInfoRepository.existsBySavedName(savedName)) {
             fileInfo = fileInfoRepository.findBySavedName(savedName)
-                    .orElseThrow(() -> new FileInfoNotFoundWithNameException("File info not found with name" + savedName));
+                    .orElseThrow(() -> new FileInfoNotFoundException("File info not found with name" + savedName));
         }
 
         fileInfo.setOriginalName(originalName);
@@ -99,7 +100,7 @@ public class FileStorageService {
 
         //uuid로 fileInfo에서 savedName 찾는다.
         FileInfo fileInfo = fileInfoRepository.findByUuid(uuid)
-                .orElseThrow(() -> new FileInfoNotFoundWithUuidException("File info not found with uuid"));
+                .orElseThrow(() -> new FileInfoNotFoundException("File info not found with uuid"));
         String savedName = fileInfo.getSavedName();
 
         //서버에서 savedName으로 파일 찾는다.
