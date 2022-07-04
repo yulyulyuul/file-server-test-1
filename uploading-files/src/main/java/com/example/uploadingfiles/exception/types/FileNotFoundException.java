@@ -16,4 +16,8 @@ public class FileNotFoundException extends CustomException {
     public FileNotFoundException (String message) {
         super(message, ErrorCode.FILE_NOT_FOUND);
     }
+
+    public FileNotFoundException() {
+        super(ErrorCode.FILE_NOT_FOUND);
+    }
 }

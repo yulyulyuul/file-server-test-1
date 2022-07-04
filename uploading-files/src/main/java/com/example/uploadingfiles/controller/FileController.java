@@ -24,27 +24,35 @@ public class FileController {
     @PostMapping("/uploadFile")
     public UploadFileResponse uploadFile (@RequestParam("file") MultipartFile file) {
 
-        FileInfo fileinfo  = fileStorageService.storeFile(file);
+        FileInfo fileInfo  = fileStorageService.storeFile(file);
 
-        String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
-                .path("/api/file/downloadFile")
-                .path(fileinfo.getSavedName())
-                .toUriString();
+        String fileDownloadUri = fileStorageService.createDownloadUri(fileInfo);
 
-        fileStorageService.saveFileInfo(fileinfo.getOriginalName(), fileinfo.getSavedName(), fileDownloadUri, file.getContentType(), file.getSize());
+        fileStorageService.saveFileInfo(fileInfo.getOriginalName(), fileInfo.getSavedName(), fileDownloadUri, file.getContentType(), file.getSize());
 
-        return new UploadFileResponse(fileinfo.getSavedName(), fileDownloadUri, file.getContentType(), file.getSize());
-
+        return new UploadFileResponse(fileInfo.getSavedName(), fileDownloadUri, file.getContentType(), file.getSize());
     }
 
-    @GetMapping("/downloadFile/{uuid:.+}")
+    @PostMapping("/uploadImage")
+    public UploadFileResponse uploadImageForMessage (@RequestParam("file") MultipartFile file) {
+
+        FileInfo fileInfo = fileStorageService.storeImage(file);
+
+        String fileDownloadUri = fileStorageService.createDownloadUri(fileInfo);
+
+        fileStorageService.saveFileInfo(fileInfo.getOriginalName(), fileInfo.getSavedName(), fileDownloadUri, file.getContentType(), file.getSize());
+
+        return new UploadFileResponse(fileInfo.getSavedName(), fileDownloadUri, file.getContentType(), file.getSize());
+    }
+
+    @GetMapping("/downloadFile/{uuid}")
     public ResponseEntity<Resource> downloadFile(@PathVariable String uuid, HttpServletRequest request) {
+
+        log.info(uuid);log.info(uuid);log.info(uuid);log.info(uuid);log.info(uuid);
 
         Resource resource = fileStorageService.loadFileAsResource(uuid);
 
         return ResponseEntity.ok()
-                .contentType()
-                .header()
                 .body(resource);
 
     }

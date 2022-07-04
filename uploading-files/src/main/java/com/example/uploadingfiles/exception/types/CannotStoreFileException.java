@@ -14,5 +14,8 @@ public class CannotStoreFileException extends CustomException {
     public CannotStoreFileException(String message) {
         super(message, ErrorCode.CANNOT_STORE_FILE);
     }
+    public CannotStoreFileException() {
+        super(ErrorCode.CANNOT_STORE_FILE);
+    }
 
 }

@@ -7,11 +7,15 @@ public class FileInfoNotFoundException extends CustomException {
 
     private static final long serialVersionUID = 1L;
 
-    public FileInfoNotFoundException (ErrorCode errorCode) {
+    public FileInfoNotFoundException(ErrorCode errorCode) {
         super(errorCode);
     }
 
-    public FileInfoNotFoundException (String message) {
+    public FileInfoNotFoundException(String message) {
         super(message, ErrorCode.FILEINFO_NOT_FOUND);
+    }
+
+    public FileInfoNotFoundException() {
+        super(ErrorCode.FILEINFO_NOT_FOUND);
     }
 }
