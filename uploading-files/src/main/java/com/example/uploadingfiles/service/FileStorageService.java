@@ -7,13 +7,14 @@ import com.example.uploadingfiles.exception.types.*;
 import com.example.uploadingfiles.repository.FileInfoRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import javax.annotation.Resource;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
@@ -33,7 +34,6 @@ public class FileStorageService {
     private final Path fileStorageLocation;
 
     @Autowired
-
     public FileStorageService(FileStorageProperties fileStorageProperties) {
         this.fileStorageLocation = Paths.get(fileStorageProperties.getUploadDir())
                 .toAbsolutePath().normalize();
@@ -60,52 +60,39 @@ public class FileStorageService {
     }
 
     private FileInfo createSavedName(MultipartFile file) {
-
         FileInfo fileInfo = new FileInfo();
         String originalName = StringUtils.cleanPath(file.getOriginalFilename());
-
         if (originalName.contains("..")) {
             throw new InvalidFilePathException("Sorry! Filename contains invalid path sequence" + originalName);
         }
-
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         String savedName = originalName + timestamp.toString();
-
         fileInfo.setOriginalName(originalName);
         fileInfo.setSavedName(savedName);
-
         return fileInfo;
     }
 
     public void saveFileInfo(String originalName, String savedName, String downloadUri, String contentType, long size) {
-
         FileInfo fileInfo = new FileInfo();
-
         if (fileInfoRepository.existsBySavedName(savedName)) {
             fileInfo = fileInfoRepository.findBySavedName(savedName)
                     .orElseThrow(() -> new FileInfoNotFoundException("File info not found with name" + savedName));
         }
-
         fileInfo.setOriginalName(originalName);
         fileInfo.setSavedName(savedName);
         fileInfo.setDownloadUri(downloadUri);
         fileInfo.setContentType(contentType);
         fileInfo.setSize(size);
-
         fileInfoRepository.save(fileInfo);
-
     }
 
-    public UrlResource loadFileAsUrlResource(String uuid) {
-
+    public Resource loadFileAsResource(String uuid) {
         FileInfo fileInfo = fileInfoRepository.findByUuid(uuid)
                 .orElseThrow(() -> new FileInfoNotFoundException());
         String savedName = fileInfo.getSavedName();
-
         try {
             Path filePath = this.fileStorageLocation.resolve(savedName).normalize();
-            UrlResource resource = new UrlResource(filePath.toUri());
-
+            Resource resource = new UrlResource(filePath.toUri());
             if (resource.exists()) {
                 return resource;
             } else {
@@ -129,22 +116,14 @@ public class FileStorageService {
     public FileInfo storeImage(MultipartFile file) {
 
         FileInfo fileInfo = createSavedName(file);
-
-        Boolean a = isNotImage(file);
-        log.info("이미지인가 아닌가" + a.toString());
-
         if (isNotImage(file)) {
             throw new FileIsNotImageException();
         }
-
         try {
-
             Path targetLocation = this.fileStorageLocation.resolve(fileInfo.getSavedName());
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
             return fileInfo;
-
         } catch (IOException ex) {
-
             throw new CannotStoreFileException();
         }
     }
