@@ -24,6 +24,7 @@ import java.sql.Array;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -36,32 +37,26 @@ public class FileStorageService {
     public FileStorageService(FileStorageProperties fileStorageProperties) {
         this.fileStorageLocation = Paths.get(fileStorageProperties.getUploadDir())
                 .toAbsolutePath().normalize();
-
         try {
             Files.createDirectories(this.fileStorageLocation);
         } catch (Exception ex) {
             throw new UnableToCreateDirectoryException("Could not create the directory where the uploaded files willl be stored");
         }
-
     }
 
     @Autowired
     private FileInfoRepository fileInfoRepository;
 
     public FileInfo storeFile(MultipartFile file) {
-
         FileInfo fileInfo = createSavedName(file);
 
         try {
-
             Path targetLocation = this.fileStorageLocation.resolve(fileInfo.getSavedName());
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
             return fileInfo;
-
         } catch (IOException ex) {
             throw new CannotStoreFileException();
         }
-
     }
 
     private FileInfo createSavedName(MultipartFile file) {
@@ -101,20 +96,18 @@ public class FileStorageService {
 
     }
 
-    public Resource loadFileAsResource(String uuid) {
+    public UrlResource loadFileAsUrlResource(String uuid) {
 
         FileInfo fileInfo = fileInfoRepository.findByUuid(uuid)
                 .orElseThrow(() -> new FileInfoNotFoundException());
         String savedName = fileInfo.getSavedName();
 
-        log.info(savedName);log.info(savedName);log.info(savedName);log.info(savedName);log.info(savedName);
-
         try {
             Path filePath = this.fileStorageLocation.resolve(savedName).normalize();
             UrlResource resource = new UrlResource(filePath.toUri());
-            log.info(filePath.toString());log.info(filePath.toString());log.info(filePath.toString());log.info(filePath.toString());
+
             if (resource.exists()) {
-                return (Resource) resource;
+                return resource;
             } else {
                 throw new FileNotFoundException();
             }

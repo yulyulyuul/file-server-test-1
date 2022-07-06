@@ -6,6 +6,7 @@ import com.example.uploadingfiles.repository.FileInfoRepository;
 import com.example.uploadingfiles.service.FileStorageService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.UrlResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -13,6 +14,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.UUID;
 
 @RestController
 @Slf4j
@@ -46,11 +48,9 @@ public class FileController {
     }
 
     @GetMapping("/downloadFile/{uuid}")
-    public ResponseEntity<Resource> downloadFile(@PathVariable String uuid, HttpServletRequest request) {
+    public ResponseEntity<UrlResource> downloadFile(@PathVariable String uuid, HttpServletRequest request) {
 
-        log.info(uuid);log.info(uuid);log.info(uuid);log.info(uuid);log.info(uuid);
-
-        Resource resource = fileStorageService.loadFileAsResource(uuid);
+        UrlResource resource = fileStorageService.loadFileAsUrlResource(uuid);
 
         return ResponseEntity.ok()
                 .body(resource);
