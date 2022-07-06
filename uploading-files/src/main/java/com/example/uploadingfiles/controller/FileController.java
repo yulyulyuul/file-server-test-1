@@ -1,6 +1,5 @@
 package com.example.uploadingfiles.controller;
 
-import com.example.uploadingfiles.domain.UploadFileResponse;
 import com.example.uploadingfiles.entity.FileInfo;
 import com.example.uploadingfiles.exception.types.FileInfoNotFoundException;
 import com.example.uploadingfiles.exception.types.FileNotFoundException;
@@ -34,19 +33,19 @@ public class FileController {
     private FileInfoRepository fileInfoRepository;
 
     @PostMapping("/uploadFile")
-    public UploadFileResponse uploadFile (@RequestParam("file") MultipartFile file) {
+    public String uploadFile (@RequestParam("file") MultipartFile file) {
 
-        FileInfo fileInfo  = fileStorageService.storeFile(file);
+        FileInfo fileInfo = fileStorageService.storeFile(file);
 
         String fileDownloadUri = fileStorageService.createDownloadUri(fileInfo);
 
         fileStorageService.saveFileInfo(fileInfo.getOriginalName(), fileInfo.getSavedName(), fileDownloadUri, file.getContentType(), file.getSize());
 
-        return new UploadFileResponse(fileInfo.getSavedName(), fileDownloadUri, file.getContentType(), file.getSize());
+        return fileInfo.getUuid();
     }
 
     @PostMapping("/uploadImage")
-    public UploadFileResponse uploadImageForMessage (@RequestParam("file") MultipartFile file) {
+    public String uploadImageForMessage (@RequestParam("file") MultipartFile file) {
 
         FileInfo fileInfo = fileStorageService.storeImage(file);
 
@@ -54,7 +53,7 @@ public class FileController {
 
         fileStorageService.saveFileInfo(fileInfo.getOriginalName(), fileInfo.getSavedName(), fileDownloadUri, file.getContentType(), file.getSize());
 
-        return new UploadFileResponse(fileInfo.getSavedName(), fileDownloadUri, file.getContentType(), file.getSize());
+        return fileInfo.getUuid();
     }
 
     @GetMapping("/downloadFile/{uuid}")
